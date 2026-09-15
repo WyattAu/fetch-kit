@@ -8,7 +8,7 @@
 
 use std::time::{Duration, Instant};
 
-use fetchkit::{ClientBuilder, FetchError};
+use fetch_kit::{ClientBuilder, FetchError};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::Deserialize;
 use wiremock::matchers::{body_string_contains, header, method, path, query_param};
@@ -169,7 +169,7 @@ async fn knob_user_agent_reaches_the_wire() {
 #[tokio::test]
 async fn knob_reqwest_builder_config_applies_verbatim() {
     let server = MockServer::start().await;
-    // The UA comes from the RAW reqwest builder (fetchkit's own
+    // The UA comes from the RAW reqwest builder (fetch_kit's own
     // user_agent setter was never called), proving the raw builder is used.
     Mock::given(header("user-agent", "raw-builder-ua/9"))
         .respond_with(ResponseTemplate::new(200).set_body_string(r#"{"value":"raw"}"#))

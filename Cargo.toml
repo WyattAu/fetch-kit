@@ -1,11 +1,11 @@
 [package]
-name = "fetchkit"
-version = "0.1.3"
+name = "fetch-kit"
+version = "0.1.4"
 edition = "2024"
 rust-version = "1.85"
 description = "Resilient HTTP client for Rust — retry, circuit breaker, connection pooling, and typed JSON helpers built on reqwest"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/WyattAu/fetchkit"
+repository = "https://github.com/WyattAu/fetch-kit"
 keywords = ["http", "reqwest", "retry", "circuit-breaker", "resilient"]
 categories = ["network-programming", "web-programming"]
 exclude = ["/target"]
@@ -41,7 +41,7 @@ native-tls = ["reqwest/native-tls"]
 circuit-breaker = ["dep:breaker"]
 
 [[bench]]
-name = "fetch_bench"
+name = "fetch_kit_bench"
 harness = false
 
 [lints.clippy]

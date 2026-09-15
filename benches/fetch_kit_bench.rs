@@ -1,5 +1,5 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use fetchkit::ClientBuilder;
+use fetch_kit::ClientBuilder;
 use std::time::Duration;
 
 fn bench_client_builder_default(c: &mut Criterion) {

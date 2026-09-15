@@ -1,4 +1,4 @@
-/// Errors that can occur when making requests with `fetchkit`.
+/// Errors that can occur when making requests with `fetch_kit`.
 #[derive(Debug, thiserror::Error)]
 pub enum FetchError {
     /// A network-level error (DNS, connection refused, etc.).
@@ -56,7 +56,7 @@ impl From<reqwest_middleware::Error> for FetchError {
     fn from(err: reqwest_middleware::Error) -> Self {
         match err {
             reqwest_middleware::Error::Middleware(e) => {
-                // Preserve fetchkit's own middleware errors (e.g.
+                // Preserve fetch_kit's own middleware errors (e.g.
                 // `CircuitOpen`) so callers can match on them.
                 let e = match e.downcast::<FetchError>() {
                     Ok(fetch_err) => return fetch_err,

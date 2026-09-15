@@ -2,7 +2,7 @@
 
 use proptest::prelude::*;
 
-use fetchkit::{Client, FetchError};
+use fetch_kit::{Client, FetchError};
 
 #[test]
 fn client_builder_retries_always_stored() {

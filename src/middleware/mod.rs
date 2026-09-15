@@ -1,4 +1,4 @@
-//! Middleware implementations for `fetchkit`.
+//! Middleware implementations for `fetch_kit`.
 
 #[cfg(feature = "circuit-breaker")]
 mod circuit_breaker;

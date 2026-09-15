@@ -3,7 +3,7 @@
 
 //! Resilient HTTP client for Rust.
 //!
-//! `fetchkit` wraps `reqwest-middleware` with sensible defaults for retries,
+//! `fetch_kit` wraps `reqwest-middleware` with sensible defaults for retries,
 //! timeouts, and typed JSON helpers. Enable the `circuit-breaker` feature for
 //! automatic circuit-breaking on repeated failures.
 
@@ -198,7 +198,7 @@ impl Client {
     /// an optional base URL.
     ///
     /// This is useful when you need to attach custom middleware (e.g. a
-    /// circuit breaker from an external registry) that fetchkit's builder
+    /// circuit breaker from an external registry) that fetch_kit's builder
     /// does not natively support.
     pub fn from_parts(inner: ClientWithMiddleware, base_url: Option<String>) -> Self {
         Self { inner, base_url }
@@ -828,7 +828,7 @@ mod tests {
 
     #[test]
     fn client_builder_user_agent() {
-        let client = ClientBuilder::new().user_agent("fetchkit/0.1").build();
+        let client = ClientBuilder::new().user_agent("fetch_kit/0.1").build();
         let _ = client.inner();
     }
 

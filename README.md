@@ -1,15 +1,13 @@
-# fetchkit
+# fetch-kit
 
 [![Rust](https://img.shields.io/badge/rustc-1.85+-blue.svg)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
 
 Resilient HTTP client for Rust — retry, circuit breaker, connection pooling, and typed JSON helpers built on reqwest.
 
-> **Note on publishing:** the crate name `fetchkit` on crates.io belongs to an
-> unrelated project (maintained by `everruns`, currently at 0.5.0). This crate
-> has never been published to crates.io under this name and its versions
-> (0.1.x) are tracked only via git tags in this repository. Renaming is under
-> discussion — until resolved, do **not** `cargo publish` this crate.
+> **Naming:** previously `fetchkit`; renamed to `fetch-kit` (estate
+> convention) because `fetchkit` on crates.io belongs to an unrelated
+> project (maintained by `everruns`). Published as **`fetch-kit`**.
 
 ## Features
 
@@ -23,7 +21,7 @@ Resilient HTTP client for Rust — retry, circuit breaker, connection pooling, a
 ## Quick Start
 
 ```rust
-use fetchkit::Client;
+use fetch_kit::Client;
 use std::time::Duration;
 
 #[tokio::main]
@@ -47,7 +45,7 @@ Enable the `circuit-breaker` feature to wrap requests in a breaker that
 automatically rejects calls after repeated failures.
 
 ```rust
-use fetchkit::Client;
+use fetch_kit::Client;
 use breaker::{CircuitBreaker, CircuitBreakerConfig};
 
 #[tokio::main]
@@ -67,7 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ## Request Builder
 
 ```rust
-use fetchkit::Client;
+use fetch_kit::Client;
 use std::time::Duration;
 
 #[tokio::main]
@@ -99,7 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Comparison with raw reqwest
 
-| | raw reqwest | fetchkit |
+| | raw reqwest | fetch-kit |
 |---|---|---|
 | Retries | manual or separate middleware | built-in (configurable) |
 | JSON helpers | `resp.json::<T>()` each time | `get_json` / `post_json` |

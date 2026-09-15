@@ -4,7 +4,7 @@
 
 //! Wire-level integration tests against a real HTTP server (wiremock).
 //!
-//! Every test starts a loopback server and drives the public [`fetchkit`]
+//! Every test starts a loopback server and drives the public [`fetch_kit`]
 //! API over an actual TCP connection, so request shape, status handling,
 //! retry behavior, timeouts, and the circuit breaker are validated at the
 //! wire boundary rather than against mocks.
@@ -15,7 +15,7 @@
 
 use std::time::Duration;
 
-use fetchkit::{Client, ClientBuilder, FetchError};
+use fetch_kit::{Client, ClientBuilder, FetchError};
 use serde::{Deserialize, Serialize};
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -465,7 +465,7 @@ mod breaker_wire {
 #[cfg(feature = "multipart")]
 #[tokio::test]
 async fn multipart_upload_carries_text_and_file_parts() {
-    use fetchkit::Client;
+    use fetch_kit::Client;
     use wiremock::ResponseTemplate as RT;
     use wiremock::matchers::body_string_contains;
 
