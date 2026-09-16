@@ -115,7 +115,7 @@ checksum = "b588b76d00fde79687d7646a9b5bdf3cc0f655e0bbd080335a95d7e96f3587da"
 [[package]]
 name = "breaker"
 version = "1.0.0"
-source = "git+https://github.com/WyattAu/breaker#f995cd89ef08ab3901ecccc472310c62664860cc"
+source = "git+https://github.com/WyattAu/breaker?tag=v1.0.0#f995cd89ef08ab3901ecccc472310c62664860cc"
 dependencies = [
  "loom",
  "parking_lot",
