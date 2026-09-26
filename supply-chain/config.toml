@@ -800,6 +800,10 @@ version = "1.0.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.synstructure]]
+version = "0.13.2"
+criteria = "safe-to-deploy"
+
+[[exemptions.synstructure]]
 version = "0.14.0"
 criteria = "safe-to-deploy"
 
@@ -1052,7 +1056,7 @@ version = "0.8.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.yoke-derive]]
-version = "0.8.3"
+version = "0.8.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.zerocopy]]
