@@ -32,7 +32,7 @@ breaker = { version = "1.0", optional = true }
 proptest = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "test-util"] }
 serde = { version = "1", features = ["derive"] }
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.7", features = ["html_reports"] }
 http = "1"
 # Wire-level integration tests (tests/wire.rs): a real HTTP server on loopback.
 wiremock = "0.6"
