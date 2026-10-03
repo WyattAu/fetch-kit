@@ -1,13 +1,22 @@
+//! Circuit-breaker middleware wrapping the estate `breaker` crate.
+//!
+//! The breaker records every **HTTP attempt** it observes. Because the
+//! built-in client composes `[retry, breaker]` (retry outermost), each
+//! retry attempt passes the breaker individually — a flaky endpoint that
+//! burns through retries trips the breaker that much sooner.
+
 use http::Extensions;
 use reqwest::{Request, Response};
-use reqwest_middleware::{Middleware, Next};
 
+use super::{Error, Middleware, Next, Result};
 use crate::error::FetchError;
 
-/// A `reqwest-middleware` middleware that wraps a [`breaker::CircuitBreaker`].
+/// A middleware that wraps a [`breaker::CircuitBreaker`].
 ///
 /// Before each request the circuit state is checked. If the circuit is
-/// **Open** the request is short-circuited with [`FetchError::CircuitOpen`].
+/// **Open** the request is short-circuited with [`FetchError::CircuitOpen`]
+/// without touching the transport — and without being retried, since
+/// [`super::RetryMiddleware`] treats middleware errors as permanent.
 ///
 /// After a successful response (2xx / 3xx / 4xx other than 429) the breaker
 /// records a success. On 5xx, 429, or network errors a failure is recorded.
@@ -29,20 +38,14 @@ impl Middleware for CircuitBreakerMiddleware {
         req: Request,
         extensions: &mut Extensions,
         next: Next<'_>,
-    ) -> reqwest_middleware::Result<Response> {
+    ) -> Result<Response> {
         use breaker::State;
 
-        match self.breaker.state() {
-            State::Open => {
-                // `From<FetchError> for anyhow::Error` keeps the concrete
-                // type, so `FetchError::from` can downcast it back and
-                // surface `FetchError::CircuitOpen` to the caller.
-                return Err(reqwest_middleware::Error::Middleware(
-                    FetchError::CircuitOpen.into(),
-                ));
-            }
-            State::HalfOpen => {}
-            State::Closed => {}
+        if self.breaker.state() == State::Open {
+            // `FetchError` is kept as the concrete type inside the boxed
+            // error, so `FetchError::from` can downcast it back and
+            // surface `FetchError::CircuitOpen` to the caller.
+            return Err(Error::Middleware(FetchError::CircuitOpen.into()));
         }
 
         match next.run(req, extensions).await {

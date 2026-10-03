@@ -1,5 +1,9 @@
+// The bench drives the builder knobs; the retry-shaped ones live behind
+// the `retry` feature, so the retry-heavy benches are feature-gated and a
+// stub main keeps `--no-default-features --all-targets` compiling.
 use criterion::{Criterion, criterion_group, criterion_main};
 use fetch_kit::ClientBuilder;
+#[cfg(feature = "retry")]
 use std::time::Duration;
 
 fn bench_client_builder_default(c: &mut Criterion) {
@@ -11,6 +15,7 @@ fn bench_client_builder_default(c: &mut Criterion) {
     });
 }
 
+#[cfg(feature = "retry")]
 fn bench_client_builder_with_options(c: &mut Criterion) {
     c.bench_function("client_builder_with_options", |b| {
         b.iter(|| {
@@ -43,6 +48,7 @@ fn bench_client_build_with_base_url(c: &mut Criterion) {
     });
 }
 
+#[cfg(feature = "retry")]
 fn bench_client_builder_chaining(c: &mut Criterion) {
     c.bench_function("client_builder_chaining", |b| {
         b.iter(|| {
@@ -56,6 +62,7 @@ fn bench_client_builder_chaining(c: &mut Criterion) {
     });
 }
 
+#[cfg(feature = "retry")]
 criterion_group!(
     benches,
     bench_client_builder_default,
@@ -63,5 +70,12 @@ criterion_group!(
     bench_client_build,
     bench_client_build_with_base_url,
     bench_client_builder_chaining,
+);
+#[cfg(not(feature = "retry"))]
+criterion_group!(
+    benches,
+    bench_client_builder_default,
+    bench_client_build,
+    bench_client_build_with_base_url,
 );
 criterion_main!(benches);

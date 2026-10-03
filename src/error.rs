@@ -26,7 +26,7 @@ pub enum FetchError {
     #[error("circuit breaker is open; requests temporarily blocked")]
     CircuitOpen,
 
-    /// A middleware error from reqwest-middleware.
+    /// A middleware error raised inside the fetch-kit middleware chain.
     #[error("middleware error: {0}")]
     Middleware(String),
 
@@ -52,32 +52,18 @@ impl From<reqwest::Error> for FetchError {
     }
 }
 
-impl From<reqwest_middleware::Error> for FetchError {
-    fn from(err: reqwest_middleware::Error) -> Self {
+impl From<crate::middleware::Error> for FetchError {
+    fn from(err: crate::middleware::Error) -> Self {
         match err {
-            reqwest_middleware::Error::Middleware(e) => {
+            crate::middleware::Error::Middleware(e) => {
                 // Preserve fetch_kit's own middleware errors (e.g.
-                // `CircuitOpen`) so callers can match on them.
-                let e = match e.downcast::<FetchError>() {
-                    Ok(fetch_err) => return fetch_err,
-                    Err(e) => e,
-                };
-                // `RetryTransientMiddleware` re-wraps the final error in a
-                // `RetryError` even when no retries were performed —
-                // unwrap that layer before degrading to `Middleware`.
-                let e = match e.downcast::<reqwest_retry::RetryError>() {
-                    Ok(retry_err) => {
-                        let inner = match retry_err {
-                            reqwest_retry::RetryError::Error(inner) => inner,
-                            reqwest_retry::RetryError::WithRetries { err, .. } => err,
-                        };
-                        return FetchError::from(inner);
-                    }
-                    Err(e) => e,
-                };
-                FetchError::Middleware(e.to_string())
+                // `CircuitOpen`, `Timeout`) so callers can match on them.
+                match e.downcast::<FetchError>() {
+                    Ok(fetch_err) => *fetch_err,
+                    Err(e) => FetchError::Middleware(e.to_string()),
+                }
             }
-            reqwest_middleware::Error::Reqwest(e) => FetchError::from(e),
+            crate::middleware::Error::Reqwest(e) => FetchError::from(e),
         }
     }
 }

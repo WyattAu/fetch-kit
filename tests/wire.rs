@@ -1,3 +1,6 @@
+// The suite drives the default client stack, whose retry knobs
+// (`ClientBuilder::retries`) exist behind the `retry` feature.
+#![cfg(feature = "retry")]
 // Wire tests exercise real HTTP round trips; unwrap/expect is the test
 // signal here.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
@@ -483,7 +486,7 @@ async fn multipart_upload_carries_text_and_file_parts() {
     // Multipart bodies stream, so the retry middleware (which clones
     // requests) cannot wrap them — build a retry-free client via
     // `from_parts` and exercise that constructor path too.
-    let no_retry = reqwest_middleware::ClientBuilder::new(reqwest::Client::new()).build();
+    let no_retry = fetch_kit::middleware::ClientBuilder::new(reqwest::Client::new()).build();
     let client = Client::from_parts(no_retry, None);
 
     let form = reqwest::multipart::Form::new()

@@ -1,3 +1,6 @@
+// The suite drives the default client stack, whose retry knobs
+// (`ClientBuilder::retries`) exist behind the `retry` feature.
+#![cfg(feature = "retry")]
 // Wire-level config-knob behavior matrix: every `ClientBuilder` /
 // `RequestBuilder` knob must observably change what crosses the wire —
 // default vs configured must differ. Request-shape knobs are proven with
@@ -198,11 +201,10 @@ async fn knob_retry_bounds_change_retry_pacing() {
     // Always-500 server; `retries(1)` → exactly 2 requests per run. The ONLY
     // observable difference between runs is client-side backoff pacing.
     //
-    // reqwest-retry 0.9 / retry-policies 0.5 default to `Jitter::Full`: each
-    // wait is uniform in [0, max_bound]. Individual waits are therefore
-    // random, so instead of asserting on one wait we sum N runs: the sum of
-    // N uniform draws concentrates hard around N * bound/2, making the floor
-    // assertion deterministic-in-practice (failure probability < 1e-5).
+    // loop-retry (the estate backoff) adds up to 10% jitter on top of the
+    // configured bound, so individual waits vary slightly; instead of
+    // asserting on one wait we sum N runs, concentrating the sum far from
+    // the floor, making the assertion deterministic-in-practice.
     async fn timed_run(initial: Duration, max: Duration, runs: usize) -> Duration {
         let server = MockServer::start().await;
         Mock::given(wiremock::matchers::any())
@@ -227,17 +229,17 @@ async fn knob_retry_bounds_change_retry_pacing() {
         elapsed
     }
 
-    // 8 runs x 1 retry x bound 250ms: waits are U[0, 250ms], sum mean 1000ms,
-    // std ≈ 230ms → asserting ≥ 200ms cannot plausibly fail by chance, while
+    // 8 runs x 1 retry x 250ms bound: each wait is 250-275ms (10% jitter),
+    // sum ≈ 2s, so asserting ≥ 200ms cannot plausibly fail by chance, while
     // a dead knob (0 backoff) would finish in a few milliseconds.
     let slow = timed_run(Duration::from_millis(250), Duration::from_millis(250), 8).await;
-    // Same shape at 1ms bounds: waits are U[0, 1ms]; even with loopback
+    // Same shape at 1ms bounds: waits are 1-1.1ms; even with loopback
     // overhead the total stays far below the slow run's floor.
     let fast = timed_run(Duration::from_millis(1), Duration::from_millis(1), 8).await;
 
     assert!(
         slow >= Duration::from_millis(200),
-        "8 x U[0,250ms] backoff sums must concentrate near 1s, took {slow:?}"
+        "8 x 250ms backoff sums must concentrate near 2s, took {slow:?}"
     );
     assert!(
         fast < Duration::from_millis(300),

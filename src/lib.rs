@@ -3,20 +3,56 @@
 
 //! Resilient HTTP client for Rust.
 //!
-//! `fetch_kit` wraps `reqwest-middleware` with sensible defaults for retries,
-//! timeouts, and typed JSON helpers. Enable the `circuit-breaker` feature for
-//! automatic circuit-breaking on repeated failures.
+//! `fetch_kit` wraps `reqwest` with a native middleware stack and sensible
+//! defaults for retries, timeouts, and typed JSON helpers. Enable the
+//! `circuit-breaker` feature for automatic circuit-breaking on repeated
+//! failures.
+//!
+//! # Middleware
+//!
+//! The [`middleware::Middleware`] trait is the composition point. Its
+//! shape mirrors `reqwest-middleware` 0.5, so migrating an existing
+//! middleware is an import-path swap. Middleware wrap the transport in an
+//! onion; the middleware registered **first** is the **outermost** layer:
+//!
+//! ```text
+//! ClientBuilder::new(client)
+//!     .with(AuthMiddleware)   // 1st registered → outermost
+//!     .with(RetryMiddleware)  // 2nd registered
+//!     .build();
+//!
+//! request  →  Auth  →  Retry  →  transport
+//! response ←  Auth  ←  Retry  ←  ╹
+//! ```
+//!
+//! Bundled middleware (each behind a feature): `middleware::RetryMiddleware`
+//! (default-on, powered by the estate `loop-retry` backoff),
+//! `middleware::CircuitBreakerMiddleware`, `middleware::ThrottleMiddleware`,
+//! `middleware::TimeoutMiddleware`, and `middleware::BaseUrlMiddleware`.
+//!
+//! # Built-ins are defaults; middleware are composition points
+//!
+//! The [`ClientBuilder`] knobs configure the built-in stack:
+//! `retries`/`retry_bounds` shape the default retry middleware (feature
+//! `retry`), `with_breaker` inserts the default breaker, and `base_url`
+//! resolves paths eagerly. Custom middleware registered via
+//! [`ClientBuilder::with_middleware`] run **outermost** — wrapping the
+//! built-ins — so they observe the final outcome of the whole default
+//! stack. Post-build, [`Client::with_middleware`] appends middleware
+//! **innermost** on a built client.
 
 /// Error types.
 pub mod error;
 /// Middleware implementations.
 pub mod middleware;
 
+use std::sync::Arc;
 use std::time::Duration;
 
-use reqwest_middleware::{ClientBuilder as ReqwestClientBuilder, ClientWithMiddleware};
-use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
-use serde::{Serialize, de::DeserializeOwned};
+use middleware::{ClientBuilder as ChainBuilder, ClientWithMiddleware, Middleware};
+use serde::Serialize;
+#[cfg(feature = "json")]
+use serde::de::DeserializeOwned;
 
 pub use error::FetchError;
 pub use reqwest::Response;
@@ -31,12 +67,15 @@ pub struct Client {
 /// Builder for constructing a [`Client`] with custom configuration.
 pub struct ClientBuilder {
     reqwest_builder: reqwest::ClientBuilder,
-    retry_policy: ExponentialBackoff,
     base_url: Option<String>,
+    #[cfg(feature = "retry")]
     retries: u32,
+    #[cfg(feature = "retry")]
     initial_backoff: Duration,
+    #[cfg(feature = "retry")]
     max_backoff: Duration,
     default_headers: reqwest::header::HeaderMap,
+    user_middleware: Vec<Arc<dyn Middleware>>,
     #[cfg(feature = "circuit-breaker")]
     breaker: Option<breaker::CircuitBreaker>,
 }
@@ -50,18 +89,17 @@ impl Default for ClientBuilder {
 impl ClientBuilder {
     /// Create a new builder with defaults (30s timeout, 3 retries, exponential backoff).
     pub fn new() -> Self {
-        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
-
-        let reqwest_builder = reqwest::Client::builder().timeout(Duration::from_secs(30));
-
         Self {
-            reqwest_builder,
-            retry_policy,
+            reqwest_builder: reqwest::Client::builder().timeout(Duration::from_secs(30)),
             base_url: None,
+            #[cfg(feature = "retry")]
             retries: 3,
+            #[cfg(feature = "retry")]
             initial_backoff: Duration::from_millis(500),
+            #[cfg(feature = "retry")]
             max_backoff: Duration::from_secs(30),
             default_headers: reqwest::header::HeaderMap::new(),
+            user_middleware: Vec::new(),
             #[cfg(feature = "circuit-breaker")]
             breaker: None,
         }
@@ -80,19 +118,32 @@ impl ClientBuilder {
     }
 
     /// Set the maximum number of retries.
+    ///
+    /// Shapes the built-in [`middleware::RetryMiddleware`] (feature
+    /// `retry`, default-on). For custom retry behavior, register a
+    /// [`middleware::RetryMiddleware`] with a full
+    /// [`middleware::RetryConfig`] via [`ClientBuilder::with_middleware`].
+    #[cfg(feature = "retry")]
     pub fn retries(mut self, retries: u32) -> Self {
         self.retries = retries;
-        self.retry_policy = ExponentialBackoff::builder().build_with_max_retries(retries);
         self
     }
 
     /// Set the initial and maximum retry backoff durations.
+    #[cfg(feature = "retry")]
     pub fn retry_bounds(mut self, initial: Duration, max: Duration) -> Self {
         self.initial_backoff = initial;
         self.max_backoff = max;
-        self.retry_policy = ExponentialBackoff::builder()
-            .retry_bounds(initial, max)
-            .build_with_max_retries(self.retries);
+        self
+    }
+
+    /// Register custom middleware to run **outermost** — wrapping the
+    /// built-in retry/breaker stack — observing each logical request once.
+    ///
+    /// Middleware registered first runs outermost; see the
+    /// [`middleware`] module docs for the full ordering semantics.
+    pub fn with_middleware(mut self, middleware: impl Middleware) -> Self {
+        self.user_middleware.push(Arc::new(middleware));
         self
     }
 
@@ -165,19 +216,36 @@ impl ClientBuilder {
             .build()
             .map_err(|e| FetchError::BuildError(e.to_string()))?;
 
-        let builder = ReqwestClientBuilder::new(reqwest_client)
-            .with(RetryTransientMiddleware::new_with_policy(self.retry_policy));
+        // Composition order (first = outermost):
+        //   [user middleware…] → retry → breaker → transport.
+        // The breaker sits inside the retry loop, so it records every
+        // HTTP attempt individually; user middleware wrap the whole
+        // built-in stack and observe only final outcomes.
+        let mut chain = ChainBuilder::new(reqwest_client);
+        for middleware in self.user_middleware {
+            chain = chain.with_middleware(middleware);
+        }
 
-        #[cfg(feature = "circuit-breaker")]
-        let builder = match self.breaker {
-            Some(breaker) => builder.with(middleware::CircuitBreakerMiddleware::new(breaker)),
-            None => builder,
+        #[cfg(feature = "retry")]
+        let chain = {
+            use loop_retry::RetryConfig;
+            let config = RetryConfig {
+                max_retries: self.retries,
+                initial_delay: self.initial_backoff,
+                max_delay: self.max_backoff,
+                ..RetryConfig::default()
+            };
+            chain.with(middleware::RetryMiddleware::new(config))
         };
 
-        let inner = builder.build();
+        #[cfg(feature = "circuit-breaker")]
+        let chain = match self.breaker {
+            Some(breaker) => chain.with(middleware::CircuitBreakerMiddleware::new(breaker)),
+            None => chain,
+        };
 
         Ok(Client {
-            inner,
+            inner: chain.build(),
             base_url: self.base_url,
         })
     }
@@ -199,9 +267,23 @@ impl Client {
     ///
     /// This is useful when you need to attach custom middleware (e.g. a
     /// circuit breaker from an external registry) that fetch_kit's builder
-    /// does not natively support.
+    /// does not natively support. Use [`Client::with_middleware`] to append
+    /// further middleware to the chain after construction.
     pub fn from_parts(inner: ClientWithMiddleware, base_url: Option<String>) -> Self {
         Self { inner, base_url }
+    }
+
+    /// Append a middleware **inside** the existing chain (closest to the
+    /// transport) and return the new client.
+    ///
+    /// This is a composition point for already-built clients. When
+    /// building from scratch, prefer [`ClientBuilder::with_middleware`],
+    /// which registers middleware outermost.
+    pub fn with_middleware(self, middleware: impl Middleware) -> Self {
+        Self {
+            inner: self.inner.with_middleware(Arc::new(middleware)),
+            base_url: self.base_url,
+        }
     }
 
     /// Resolve a path against the optional base URL.
@@ -252,7 +334,9 @@ impl Client {
         }
     }
 
-    /// Perform a GET request and deserialize the JSON response.
+    /// Perform a GET request and deserialize the JSON response (requires
+    /// the `json` feature).
+    #[cfg(feature = "json")]
     pub async fn get_json<T: DeserializeOwned>(&self, url: &str) -> Result<T, FetchError> {
         let url = self.resolve_url(url);
         let response = self.inner.get(&url).send().await?;
@@ -260,7 +344,9 @@ impl Client {
         Ok(response.json().await?)
     }
 
-    /// Perform a POST request with a JSON body and deserialize the JSON response.
+    /// Perform a POST request with a JSON body and deserialize the JSON response (requires
+    /// the `json` feature).
+    #[cfg(feature = "json")]
     pub async fn post_json<B: Serialize, T: DeserializeOwned>(
         &self,
         url: &str,
@@ -272,7 +358,9 @@ impl Client {
         Ok(response.json().await?)
     }
 
-    /// Fetch from `primary_url`; on failure, fall back to `fallback_url`.
+    /// Fetch from `primary_url`; on failure, fall back to `fallback_url` (requires
+    /// the `json` feature).
+    #[cfg(feature = "json")]
     pub async fn fetch_with_fallback<T: DeserializeOwned>(
         &self,
         primary_url: &str,
@@ -284,7 +372,11 @@ impl Client {
         }
     }
 
-    /// Access the inner `reqwest_middleware::ClientWithMiddleware`.
+    /// Access the inner [`middleware::ClientWithMiddleware`].
+    ///
+    /// The returned client shares this client's connection pool and
+    /// middleware chain; use [`middleware::ClientWithMiddleware::with_middleware`]
+    /// (or [`Client::with_middleware`]) to compose further middleware onto it.
     pub fn inner(&self) -> &ClientWithMiddleware {
         &self.inner
     }
@@ -307,15 +399,23 @@ impl Default for Client {
     }
 }
 
-/// A wrapper around `reqwest_middleware::RequestBuilder` that provides a
+/// A wrapper around [`middleware::RequestBuilder`] that provides an
 /// ergonomic API and resolves the URL against the client's base URL.
 pub struct RequestBuilder<'a> {
     #[allow(dead_code)]
     client: &'a Client,
-    builder: reqwest_middleware::RequestBuilder,
+    builder: middleware::RequestBuilder,
 }
 
 impl<'a> RequestBuilder<'a> {
+    /// Attach request-scoped typed data, carried through every middleware
+    /// in the chain's shared extension map (and surviving across retry
+    /// attempts). Middleware read it with `extensions.get::<T>()`.
+    pub fn with_extension<T: Clone + Send + Sync + 'static>(mut self, value: T) -> Self {
+        self.builder = self.builder.with_extension(value);
+        self
+    }
+
     /// Add a single header.
     pub fn header<K, V>(mut self, key: K, value: V) -> Self
     where
@@ -346,7 +446,8 @@ impl<'a> RequestBuilder<'a> {
         self
     }
 
-    /// Set a JSON body.
+    /// Set a JSON body (requires the `json` feature).
+    #[cfg(feature = "json")]
     pub fn json<T: Serialize + ?Sized>(mut self, body: &T) -> Self {
         self.builder = self.builder.json(body);
         self
@@ -393,7 +494,9 @@ impl<'a> RequestBuilder<'a> {
         Client::check_status(response).await
     }
 
-    /// Send the request and deserialize the JSON response.
+    /// Send the request and deserialize the JSON response (requires the
+    /// `json` feature).
+    #[cfg(feature = "json")]
     pub async fn json_response<T: DeserializeOwned>(self) -> Result<T, FetchError> {
         let response = self.send().await?;
         Ok(response.json().await?)
@@ -407,12 +510,14 @@ mod tests {
     use std::time::Duration;
 
     #[test]
+    #[cfg(feature = "retry")]
     fn client_builder_default_timeout() {
         let builder = ClientBuilder::new();
         assert_eq!(builder.retries, 3);
     }
 
     #[test]
+    #[cfg(feature = "retry")]
     fn client_builder_default_retries() {
         let builder = ClientBuilder::new();
         assert_eq!(builder.retries, 3);
@@ -432,6 +537,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "retry")]
     fn client_builder_custom_retries() {
         let builder = ClientBuilder::new().retries(5);
         assert_eq!(builder.retries, 5);
@@ -446,6 +552,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "retry")]
     fn client_builder_chaining() {
         let client = ClientBuilder::new()
             .base_url("https://api.example.com")
@@ -557,6 +664,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "retry")]
     fn client_builder_default_trait() {
         let builder = ClientBuilder::default();
         assert_eq!(builder.retries, 3);
@@ -565,6 +673,7 @@ mod tests {
     // ---- Additional ClientBuilder tests ----
 
     #[test]
+    #[cfg(feature = "retry")]
     fn client_builder_new_creates_valid_builder() {
         let builder = ClientBuilder::new();
         assert_eq!(builder.retries, 3);
@@ -597,18 +706,21 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "retry")]
     fn client_builder_retries_zero() {
         let builder = ClientBuilder::new().retries(0);
         assert_eq!(builder.retries, 0);
     }
 
     #[test]
+    #[cfg(feature = "retry")]
     fn client_builder_retries_large() {
         let builder = ClientBuilder::new().retries(1000);
         assert_eq!(builder.retries, 1000);
     }
 
     #[test]
+    #[cfg(feature = "retry")]
     fn client_builder_overwrite_retries() {
         let builder = ClientBuilder::new().retries(5).retries(10);
         assert_eq!(builder.retries, 10);
@@ -624,6 +736,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "retry")]
     fn client_builder_full_chain() {
         let client = ClientBuilder::new()
             .base_url("https://api.example.com")
@@ -833,6 +946,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "retry")]
     fn client_builder_retry_bounds() {
         let builder =
             ClientBuilder::new().retry_bounds(Duration::from_millis(100), Duration::from_secs(5));

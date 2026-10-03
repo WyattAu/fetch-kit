@@ -1,4 +1,8 @@
 
 # cargo-vet audits file
 
-[audits]
+[[audits.fetch-kit]]
+who = "Wyatt Au <wyatt@wyattau.com>"
+criteria = "safe-to-deploy"
+version = "0.2.0"
+notes = "First-party crate. 0.2.0 replaces the reqwest-middleware/reqwest-retry dependencies with a native middleware stack (same trait shape), adds bundled retry/throttle/timeout/base-url middleware behind features, and keeps the full wire-test matrix green. Reviewed in-repo; no unsafe code (forbidden at compile time)."
