@@ -560,8 +560,16 @@ criteria = "safe-to-deploy"
 version = "0.23.45"
 criteria = "safe-to-deploy"
 
+[[exemptions.rustls]]
+version = "0.23.46"
+criteria = "safe-to-deploy"
+
 [[exemptions.rustls-native-certs]]
 version = "0.8.4"
+criteria = "safe-to-deploy"
+
+[[exemptions.rustls-native-certs]]
+version = "0.8.5"
 criteria = "safe-to-deploy"
 
 [[exemptions.rustls-pki-types]]
@@ -814,6 +822,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.webpki-root-certs]]
 version = "1.0.9"
+criteria = "safe-to-deploy"
+
+[[exemptions.webpki-root-certs]]
+version = "1.0.10"
 criteria = "safe-to-deploy"
 
 [[exemptions.winapi-util]]
