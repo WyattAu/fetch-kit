@@ -1,7 +1,7 @@
 # Changelog
 
 All notable changes to this project are documented here. Format: [Keep a
-Changelog](https://keepachangelog.com/) — versions follow [semver](https://semver.org).
+Changelog](https://keepachangelog.com/): versions follow [semver](https://semver.org).
 
 ## [Unreleased]
 
@@ -9,7 +9,7 @@ Changelog](https://keepachangelog.com/) — versions follow [semver](https://sem
 
 ### Added
 
-- **Native middleware stack** (breaking): `middleware::Middleware` trait —
+- **Native middleware stack** (breaking): `middleware::Middleware` trait:
   `handle(req, extensions, next: Next<'_>) -> Result<Response>` with the
   same shape as `reqwest-middleware` 0.5, so migrating an existing
   middleware is an import-path swap. Includes `ClientWithMiddleware`
@@ -22,13 +22,13 @@ Changelog](https://keepachangelog.com/) — versions follow [semver](https://sem
 - **Bundled middleware** (each feature-gated):
   - `RetryMiddleware` (feature `retry`, **default-on**): delegates
     backoff timing to the estate `loop-retry` crate (exponential, ×2,
-    ≤10% jitter) — `RetryConfig` is re-exported. Retries transport
+    ≤10% jitter): `RetryConfig` is re-exported. Retries transport
     timeouts/connect errors and transient statuses (408, 429, 5xx except
     501); middleware errors are never retried, so downstream
     short-circuits (e.g. an open breaker) surface immediately. Exhausted
     retryable statuses return the final response unchanged.
   - `ThrottleMiddleware` (feature `throttle`): per-authority
-    continuous-refill token bucket — sustained throughput is rate-bounded
+    continuous-refill token bucket: sustained throughput is rate-bounded
     (property-tested over 300 proptest cases), bursts up to
     `burst_capacity`.
   - `TimeoutMiddleware` (feature `timeout`): bounds the whole downstream
@@ -42,7 +42,7 @@ Changelog](https://keepachangelog.com/) — versions follow [semver](https://sem
   carries typed per-request data through the middleware chain's shared
   `extensions` map (`extensions.get::<T>()` in `Middleware::handle`) and
   survives retry attempts. (This is the reqwest-middleware extensions
-  story — reqwest does not expose request extensions publicly.)
+  story: reqwest does not expose request extensions publicly.)
 - `ClientBuilder::with_middleware`: register custom middleware
   **outermost** (wrapping the built-in stack) at build time.
 - `Client::with_middleware`: append middleware **innermost** on a
@@ -73,7 +73,7 @@ Changelog](https://keepachangelog.com/) — versions follow [semver](https://sem
   `with_breaker`, eager `base_url` resolution, typed JSON helpers, and
   the full wire-test matrix. Built-ins remain the defaults; the bundled
   middleware are the composition points. The default chain composes
-  `[user middleware…] → retry → breaker → transport` — the breaker sees
+  `[user middleware…] → retry → breaker → transport`: the breaker sees
   every retry attempt, and `CircuitOpen` is never retried (proven in
   `tests/middleware.rs` `retry_breaker`).
 
@@ -82,7 +82,7 @@ Changelog](https://keepachangelog.com/) — versions follow [semver](https://sem
 ### Added
 
 - `tests/config_matrix.rs` (13 tests): behavior-observable wire coverage for
-  the remaining builder/request knobs — `default_header`/`default_headers`
+  the remaining builder/request knobs: `default_header`/`default_headers`
   (stamped on every request; per-request headers take precedence),
   `user_agent`, `reqwest_builder` (raw config applied verbatim),
   `retry_bounds` (pacing observably changes; jitter-aware assertion),
@@ -94,7 +94,7 @@ Changelog](https://keepachangelog.com/) — versions follow [semver](https://sem
 ### Fixed
 
 - **Dead knob:** `ClientBuilder::default_header`/`default_headers` stored
-  into a field that `build()` never read — the headers silently never
+  into a field that `build()` never read: the headers silently never
   reached the wire. `try_build` now applies them to the underlying
   `reqwest` client (same release also carries 0.1.2's wire suite; this
   crate is not published to crates.io under this name).

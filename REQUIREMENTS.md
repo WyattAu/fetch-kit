@@ -1,9 +1,9 @@
-# Requirements — fetchkit
+# Requirements: fetchkit
 
 Numbered, testable requirements. Every requirement maps to at least one named
 test or doc-comment contract; security-relevant items cite THREAT-MODEL.md rows.
 
-Scope: Resilient HTTP client — native middleware stack (reqwest-middleware-compatible trait shape) with retries, timeouts, throttling, and circuit breaking
+Scope: Resilient HTTP client: native middleware stack (reqwest-middleware-compatible trait shape) with retries, timeouts, throttling, and circuit breaking
 
 ## Functional
 

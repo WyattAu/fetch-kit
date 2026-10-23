@@ -5,7 +5,7 @@
 [![docs.rs](https://docs.rs/fetch-kit/badge.svg)](https://docs.rs/fetch-kit)
 [![crates.io](https://img.shields.io/crates/v/fetch-kit.svg)](https://crates.io/crates/fetch-kit)
 
-Resilient HTTP client for Rust — retry, circuit breaker, connection pooling, and typed JSON helpers built on reqwest, with a native middleware stack that mirrors the `reqwest-middleware` shape.
+Resilient HTTP client for Rust: retry, circuit breaker, connection pooling, and typed JSON helpers built on reqwest, with a native middleware stack that mirrors the `reqwest-middleware` shape.
 
 > **Naming:** previously `fetchkit`; renamed to `fetch-kit` (estate
 > convention) because `fetchkit` on crates.io belongs to an unrelated
@@ -13,13 +13,13 @@ Resilient HTTP client for Rust — retry, circuit breaker, connection pooling, a
 
 ## Features
 
-- **Native middleware stack** — `Middleware` trait + `ClientWithMiddleware` chain with reqwest-middleware-compatible signatures, no extra dependency
+- **Native middleware stack**: `Middleware` trait + `ClientWithMiddleware` chain with reqwest-middleware-compatible signatures, no extra dependency
 - **Automatic retries** with exponential backoff + jitter (estate `loop-retry` semantics)
-- **Typed JSON helpers** — `get_json` / `post_json` deserialize responses directly
-- **Fallback fetching** — try a primary URL, fall back to another on failure
-- **Circuit breaker** (opt-in) — stop hammering a dead service
-- **Bundled middleware** — throttle (per-host token bucket), per-request timeout, base-URL prefixing
-- **Connection pooling** — inherits reqwest's connection pool
+- **Typed JSON helpers**: `get_json` / `post_json` deserialize responses directly
+- **Fallback fetching**: try a primary URL, fall back to another on failure
+- **Circuit breaker** (opt-in): stop hammering a dead service
+- **Bundled middleware**: throttle (per-host token bucket), per-request timeout, base-URL prefixing
+- **Connection pooling**: inherits reqwest's connection pool
 
 ## Quick Start
 
@@ -75,7 +75,7 @@ impl Middleware for AuthMiddleware {
 
 Build a chain with `middleware::ClientBuilder` (wrapping any
 `reqwest::Client`) or register middleware on the default stack with
-`ClientBuilder::with_middleware` (user middleware run outermost — see
+`ClientBuilder::with_middleware` (user middleware run outermost: see
 below):
 
 ```rust
@@ -89,7 +89,7 @@ let client = ClientBuilder::new()
 ### Ordering semantics
 
 Middleware wrap the transport in an onion. The middleware registered
-**first** is the **outermost** layer — it observes the request first and
+**first** is the **outermost** layer: it observes the request first and
 the response last:
 
 ```text
@@ -122,7 +122,7 @@ implementation sits behind its own feature:
 
 ### Built-ins are defaults; middleware are composition points
 
-The `ClientBuilder` knobs configure the built-in stack — `retries` /
+The `ClientBuilder` knobs configure the built-in stack: `retries` /
 `retry_bounds` shape the default retry middleware, `with_breaker` inserts
 the breaker, `base_url` resolves paths eagerly. The default composition
 (ordering: first = outermost) is:
@@ -136,7 +136,7 @@ the breaker, `base_url` resolves paths eagerly. The default composition
   once, with final outcomes.
 - **The breaker sits inside the retry loop**: every HTTP attempt records
   individually, so a flaky endpoint that burns retries trips the breaker
-  that much sooner — and a short-circuit (`CircuitOpen`) is a middleware
+  that much sooner: and a short-circuit (`CircuitOpen`) is a middleware
   error, which retries never mask.
 
 This is fetch-kit's differentiator over bare `reqwest-middleware`: the
@@ -234,7 +234,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Migrating from 0.1.x
 
-- **Your own middleware:** the trait shape is unchanged — swap
+- **Your own middleware:** the trait shape is unchanged: swap
   `use reqwest_middleware::{Middleware, Next, Error, Result}` for
   `use fetch_kit::middleware::{Middleware, Next, Error, Result}`.
 - **`Client::inner()`** now returns `&fetch_kit::middleware::ClientWithMiddleware`
@@ -242,7 +242,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   that type.
 - **Request-scoped data** moves from request fields to the
   `extensions` argument of `Middleware::handle` (populated via
-  `RequestBuilder::with_extension`) — this matches how
+  `RequestBuilder::with_extension`): this matches how
   `reqwest-middleware` passes extensions, since reqwest does not expose
   request extensions publicly.
 - **Backoff curve:** retries now use the estate `loop-retry` timing
