@@ -1,9 +1,9 @@
 [package]
 name = "fetch-kit"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 rust-version = "1.85"
-description = "Resilient HTTP client for Rust: retry, circuit breaker, connection pooling, and typed JSON helpers built on reqwest"
+description = "Resilient HTTP client for Rust: retry, circuit breaker, connection pooling, and typed JSON helpers built on reqwest, with a native middleware stack that mirrors the reqwest-middleware shape"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/WyattAu/fetch-kit"
 keywords = ["http", "reqwest", "retry", "circuit-breaker", "resilient"]
