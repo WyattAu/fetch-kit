@@ -29,3 +29,12 @@ via parsed input, dependency-introduced vulnerabilities.
 
 Out of scope: denial of service by resource exhaustion on already-documented
 limits, vulnerabilities in downstream consumer code.
+
+## Registry name collision (2026-10-31)
+
+The crates.io package `fetchkit` (0.6.0, owner everruns) is NOT this project.
+This crate publishes as `fetch-kit` (owner WyattAu; repository
+https://github.com/WyattAu/fetch-kit). A same-shaped-name package for an
+agent-fetching tool is exactly the impersonation pattern that hit peers in
+this space (see morluto/rea's trojanized 6.3.0 archive). Verify the owner
+before installing; our release channel is tags on the repository above.
