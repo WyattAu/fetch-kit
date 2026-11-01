@@ -5,6 +5,19 @@ Changelog](https://keepachangelog.com/): versions follow [semver](https://semver
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-01
+
+### Added
+
+- `ClientBuilder::with_breaker(CircuitBreaker)`: attach a circuit breaker to
+  the middleware chain from the builder (consumer: outrider-fetch).
+- SECURITY.md note documenting the crates.io `fetchkit` (everruns) name
+  collision; this crate publishes as `fetch-kit`.
+
+### Fixed
+
+- Docs build: middleware example matched the published API surface.
+
 ## [0.2.0] - 2026-10-03
 
 ### Added
