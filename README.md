@@ -266,3 +266,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ## License
 
 Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at your option.
+
+## Where the truth lives
+
+| Concern | File |
+|---|---|
+| Retry, breaker, pooling semantics, usage (normative) | `README.md` |
+| Requirements REQ-FK-001..901 + traceability | `REQUIREMENTS.md` |
+| Threat model | `THREAT-MODEL.md` |
+| Security policy | `SECURITY.md` |
+| Release history | `CHANGELOG.md` |

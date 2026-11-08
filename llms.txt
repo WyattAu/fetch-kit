@@ -1,0 +1,13 @@
+# fetch-kit
+
+> Resilient HTTP client for Rust: retry, circuit breaker, connection pooling,
+> and typed JSON helpers built on reqwest, with a native middleware stack that
+> mirrors the `reqwest-middleware` shape.
+
+## Docs
+
+- [README.md](README.md): retry, breaker, and pooling semantics, feature flags, quick start.
+- [REQUIREMENTS.md](REQUIREMENTS.md): numbered requirements REQ-FK-001..901 with test traceability.
+- [THREAT-MODEL.md](THREAT-MODEL.md): threat model and security mitigations.
+- [SECURITY.md](SECURITY.md): security policy.
+- [CHANGELOG.md](CHANGELOG.md): release history.
