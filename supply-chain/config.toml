@@ -57,10 +57,6 @@ version = "2.13.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.breaker]]
-version = "1.0.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.breaker]]
 version = "2.0.1"
 criteria = "safe-to-deploy"
 
@@ -165,7 +161,7 @@ version = "2.5.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.fetch-kit]]
-version = "0.2.1"
+version = "0.2.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.find-msvc-tools]]
@@ -565,15 +561,7 @@ version = "1.1.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.rustls]]
-version = "0.23.45"
-criteria = "safe-to-deploy"
-
-[[exemptions.rustls]]
 version = "0.23.46"
-criteria = "safe-to-deploy"
-
-[[exemptions.rustls-native-certs]]
-version = "0.8.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.rustls-native-certs]]
@@ -590,10 +578,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.rustls-platform-verifier-android]]
 version = "0.1.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.rustls-webpki]]
-version = "0.103.15"
 criteria = "safe-to-deploy"
 
 [[exemptions.rustls-webpki]]
@@ -725,10 +709,6 @@ version = "1.13.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.tokio]]
-version = "1.53.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.tokio]]
 version = "1.54.1"
 criteria = "safe-to-deploy"
 
@@ -762,10 +742,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.tracing]]
 version = "0.1.44"
-criteria = "safe-to-deploy"
-
-[[exemptions.tracing-attributes]]
-version = "0.1.31"
 criteria = "safe-to-deploy"
 
 [[exemptions.tracing-subscriber]]
@@ -830,10 +806,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.web-time]]
 version = "1.1.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.webpki-root-certs]]
-version = "1.0.9"
 criteria = "safe-to-deploy"
 
 [[exemptions.webpki-root-certs]]
@@ -902,10 +874,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.yoke]]
 version = "0.8.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.yoke-derive]]
-version = "0.8.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.yoke-derive]]
