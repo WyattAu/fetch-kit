@@ -373,7 +373,7 @@ version = "0.4.34"
 criteria = "safe-to-deploy"
 
 [[exemptions.loom]]
-version = "0.7.2"
+version = "0.7.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.loop-retry]]

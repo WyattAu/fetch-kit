@@ -174,11 +174,6 @@ a few `unsafe` blocks related to utf-8 validation which are locally verifiable
 as correct and otherwise this crate is good to go.
 """
 
-[[audits.bytecodealliance.audits.pin-utils]]
-who = "Pat Hickey <phickey@fastly.com>"
-criteria = "safe-to-deploy"
-version = "0.1.0"
-
 [[audits.bytecodealliance.audits.pkg-config]]
 who = "Pat Hickey <phickey@fastly.com>"
 criteria = "safe-to-deploy"
