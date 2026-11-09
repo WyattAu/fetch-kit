@@ -372,7 +372,7 @@ mod breaker_wire {
     fn breaker() -> CircuitBreaker {
         CircuitBreaker::new(
             CircuitBreakerConfig::builder()
-                .failure_rate_threshold(3) // consecutive failures before open
+                .consecutive_failures(3) // consecutive failures before open
                 .sliding_window_size(10)
                 .wait_duration(Duration::from_secs(60))
                 .build(),

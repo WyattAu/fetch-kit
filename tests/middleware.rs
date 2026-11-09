@@ -392,7 +392,7 @@ mod retry_breaker {
     fn breaker(threshold: u32) -> CircuitBreaker {
         CircuitBreaker::new(
             CircuitBreakerConfig::builder()
-                .failure_rate_threshold(threshold)
+                .consecutive_failures(threshold)
                 .sliding_window_size(10)
                 .wait_duration(Duration::from_secs(60))
                 .build(),
